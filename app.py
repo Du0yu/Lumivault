@@ -5,6 +5,8 @@ import sys
 import cv2
 from werkzeug.utils import secure_filename
 from PIL import Image
+import threading
+import time
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # 用于flash消息
@@ -173,6 +175,37 @@ def video_player(category, filename):
 def video_thumb(thumb_name):
     # 直接返回封面图片
     return send_from_directory(THUMB_DIR, thumb_name)
+
+@app.route('/reload_library', methods=['POST'])
+def reload_library():
+    """重载媒体库，清除缓存"""
+    try:
+        # 清除视频缩略图缓存
+        if os.path.exists(THUMB_DIR):
+            for file in os.listdir(THUMB_DIR):
+                file_path = os.path.join(THUMB_DIR, file)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+        
+        # 重新扫描媒体文件
+        base_path = get_base_path()
+        if base_path and os.path.exists(base_path):
+            get_media_files(base_path)
+        
+        return {'status': 'success', 'message': '媒体库重载成功'}, 200
+    except Exception as e:
+        return {'status': 'error', 'message': str(e)}, 500
+
+@app.route('/restart_server', methods=['POST'])
+def restart_server():
+    """重启服务器"""
+    def restart():
+        time.sleep(1)
+        os._exit(0)  # 强制退出进程
+    
+    # 在后台线程中重启
+    threading.Thread(target=restart).start()
+    return {'status': 'success', 'message': '服务器正在重启'}, 200
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
