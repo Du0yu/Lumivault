@@ -201,11 +201,21 @@ def restart_server():
     """重启服务器"""
     def restart():
         time.sleep(1)
-        os._exit(0)  # 强制退出进程
+        # 根据运行环境选择重启方式
+        if hasattr(sys, '_MEIPASS'):
+            # 如果是打包的exe文件
+            os.execv(sys.executable, [sys.executable] + sys.argv)
+        else:
+            # 如果是Python脚本
+            python = sys.executable
+            os.execl(python, python, *sys.argv)
     
-    # 在后台线程中重启
-    threading.Thread(target=restart).start()
-    return {'status': 'success', 'message': '服务器正在重启'}, 200
+    try:
+        # 在后台线程中重启
+        threading.Thread(target=restart, daemon=True).start()
+        return {'status': 'success', 'message': '服务器正在重启'}, 200
+    except Exception as e:
+        return {'status': 'error', 'message': str(e)}, 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
