@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>选择相册分类</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #fff;
+            --bg-accent: #f0f4f8;
+            --text-primary: #4a5568;
+            --text-secondary: #222;
+            --border-color: #e8edf5;
+            --shadow-light: rgba(0,0,0,0.03);
+            --shadow-medium: rgba(0,0,0,0.06);
+            --accent-color: #8b9dc3;
+            --accent-hover: rgba(139,157,195,0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #262626;
+            --bg-accent: #333;
+            --text-primary: #e2e8f0;
+            --text-secondary: #cbd5e0;
+            --border-color: #3a3a3a;
+            --shadow-light: rgba(0,0,0,0.2);
+            --shadow-medium: rgba(0,0,0,0.3);
+            --accent-color: #a8bfd8;
+            --accent-hover: rgba(168,191,216,0.15);
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', Arial, sans-serif;
+            background: var(--bg-primary);
+            margin: 0;
+            transition: background-color 0.3s ease;
+        }
+        .navbar {
+            width: 100%;
+            background: linear-gradient(90deg, #8b9dc3 0%, #a8bfd8 100%);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+        }
+        .navbar-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            height: 56px;
+            flex-wrap: wrap;
+            position: relative;
+        }
+        .navbar-title {
+            font-size: 1.6rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            flex: 1 1 auto;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .navbar-desc {
+            font-size: 1rem;
+            opacity: 0.85;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 40vw;
+            transition: opacity 0.2s;
+        }
+        .navbar-btn, .navbar-category-btn {
+            margin-left: 18px;
+            background: rgba(255,255,255,0.18);
+            color: #fff;
+            border: 1px solid #fff;
+            border-radius: 5px;
+            font-size: 1rem;
+            padding: 6px 18px;
+            cursor: pointer;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-decoration: none;
+            transition: background 0.2s, color 0.2s;
+            display: inline-block;
+        }
+        .navbar-btn:hover, .navbar-category-btn:hover {
+            background: #fff;
+            color: #8b9dc3;
+            text-decoration: none;
+        }
+        .theme-toggle {
+            margin-left: 18px;
+            background: rgba(255,255,255,0.18);
+            color: #fff;
+            border: 1px solid #fff;
+            border-radius: 5px;
+            font-size: 1rem;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s, color 0.2s;
+            display: inline-block;
+        }
+        .theme-toggle:hover {
+            background: #fff;
+            color: var(--accent-color);
+        }
+        @media (max-width: 600px) {
+            .navbar-inner {
+                padding: 0 8px;
+                height: auto;
+                min-height: 48px;
+            }
+            .navbar-title {
+                font-size: 1.1rem;
+                max-width: 55vw;
+            }
+            .navbar-desc {
+                display: none !important;
+            }
+            .navbar-btn, .navbar-category-btn {
+                display: none;
+            }
+            .navbar-menu-icon {
+                display: flex !important;
+            }
+        }
+        /* 侧边菜单样式 */
+        .side-menu {
+            position: fixed;
+            top: 0;
+            right: -220px;
+            width: 200px;
+            height: 100vh;
+            background: #fff;
+            box-shadow: -2px 0 16px rgba(0,0,0,0.13);
+            z-index: 3000;
+            transition: right 0.25s;
+            display: flex;
+            flex-direction: column;
+            padding: 32px 18px 18px 18px;
+        }
+        .side-menu.open {
+            right: 0;
+        }
+        .side-menu a {
+            margin: 12px 0;
+            padding: 10px 0;
+            color: #4f8cff;
+            font-size: 1.08rem;
+            text-decoration: none;
+            border-bottom: 1px solid #e3e8f0;
+            display: block;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .side-menu a:last-child {
+            border-bottom: none;
+        }
+        .side-menu-close {
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            font-size: 1.6rem;
+            color: #888;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .navbar-menu-icon {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.18);
+            border-radius: 6px;
+            border: 1px solid #fff;
+            cursor: pointer;
+            font-size: 1.6rem;
+            color: #fff;
+            z-index: 10;
+        }
+        .navbar-menu-icon:active {
+            background: #fff;
+            color: #4f8cff;
+        }
+        @media (max-width: 600px) {
+            .side-menu {
+                right: -250px;
+                width: 220px;
+                padding: 24px 16px;
+            }
+            .side-menu.open {
+                right: 0;
+            }
+            .side-menu a {
+                font-size: 1rem;
+            }
+            .side-menu-close {
+                top: 8px;
+                right: 10px;
+                width: 36px;
+                height: 36px;
+                font-size: 24px;
+            }
+        }
+        .nav-container {
+            max-width: 1200px;
+            margin: 32px auto 0 auto;
+            padding: 0 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 32px;
+            justify-content: center; /* 居中卡片 */
+            align-items: flex-start;
+        }
+        .cat-card {
+            width: 240px;
+            aspect-ratio: 4 / 3;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px var(--shadow-medium);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--text-secondary);
+            transition: box-shadow 0.2s, transform 0.2s;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 18px;
+        }
+        .cat-card:hover {
+            box-shadow: 0 6px 24px var(--accent-hover);
+            transform: translateY(-4px) scale(1.03);
+        }
+        .cat-cover {
+            width: 100%;
+            height: 0;
+            padding-bottom: 75%;
+            background: var(--bg-accent);
+            position: relative;
+        }
+        .cat-cover img {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 12px 12px 0 0;
+        }
+        .cat-overlay {
+            position: absolute;
+            left: 0; right: 0; bottom: 0; top: 0;
+            background: rgba(0,0,0,0.32);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cat-name {
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            width: 100%;
+            text-align: center;
+            padding: 0 8px;
+            z-index: 2;
+        }
+        .cat-card .cat-name {
+            /* 兼容无封面时的样式 */
+            color: #4f8cff;
+            background: none;
+            text-shadow: none;
+            margin: 12px 0 0 0;
+            position: static;
+        }
+        .cat-card .cat-cover .cat-name {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            margin: 0;
+            color: #fff;
+            background: none;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        }
+        .cat-card .cat-cover .cat-name.no-cover {
+            color: #bbb;
+            text-shadow: none;
+        }
+        @media (max-width: 600px) {
+            .nav-container {
+                gap: 12px;
+                justify-content: center;
+            }
+            .cat-card {
+                width: 90vw;
+                min-width: 0;
+                max-width: 100vw;
+            }
+            .cat-cover {
+                padding-bottom: 75%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-inner">
+            <span class="navbar-title">Lumivault</span>
+            <span class="navbar-desc">Media Library</span>
+            <a href="{{ url_for('nav') }}" class="navbar-category-btn">分类</a>
+            <a href="{{ url_for('config') }}" class="navbar-btn">设置</a>
+            <button class="theme-toggle" id="themeToggle" title="切换主题">🌙</button>
+            <div class="navbar-menu-icon" id="navbarMenuIcon" title="菜单" style="display:none;">
+                &#9776;
+            </div>
+        </div>
+    </div>
+    <!-- 侧边菜单 -->
+    <div class="side-menu" id="sideMenu">
+        <button class="side-menu-close" id="sideMenuClose" title="关闭菜单">&times;</button>
+        <a href="{{ url_for('nav') }}">分类</a>
+        <a href="{{ url_for('config') }}">设置</a>
+    </div>
+    <div class="nav-container">
+        {% for cat, cover in covers.items() %}
+        <a class="cat-card" href="{{ url_for('album', cat=cat) }}">
+            <div class="cat-cover">
+                {% if cover %}
+                <img src="{{ url_for('media', category=cat, filename=cover) }}" alt="{{ cat }}">
+                <div class="cat-overlay">
+                    <span class="cat-name">{{ cat }}</span>
+                </div>
+                {% else %}
+                <div class="cat-overlay">
+                    <span class="cat-name no-cover">{{ cat }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    <script>
+    // 主题切换功能
+    function initTheme() {
+        const themeToggle = document.getElementById('themeToggle');
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        themeToggle.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+        
+        themeToggle.addEventListener('click', function() {
+            const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        });
+    }
+    initTheme();
+
+    // 移动端侧边菜单
+    function setupSideMenu() {
+        var menuIcon = document.getElementById('navbarMenuIcon');
+        var sideMenu = document.getElementById('sideMenu');
+        var sideMenuClose = document.getElementById('sideMenuClose');
+        function openMenu() {
+            sideMenu.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeMenu() {
+            sideMenu.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        if (menuIcon && sideMenu && sideMenuClose) {
+            menuIcon.addEventListener('click', openMenu);
+            sideMenuClose.addEventListener('click', closeMenu);
+            // 点击菜单外部关闭
+            document.addEventListener('click', function(e) {
+                if (sideMenu.classList.contains('open') && !sideMenu.contains(e.target) && e.target !== menuIcon) {
+                    closeMenu();
+                }
+            });
+        }
+    }
+    setupSideMenu();
+    </script>
+</body>
+</html>

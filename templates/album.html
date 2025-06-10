@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Lumivault</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #fff;
+            --bg-tertiary: #f9fafb;
+            --bg-accent: #f0f4f8;
+            --text-primary: #4a5568;
+            --text-secondary: #666;
+            --text-muted: #9ca3af;
+            --border-color: #e8edf5;
+            --shadow-light: rgba(0,0,0,0.03);
+            --shadow-medium: rgba(0,0,0,0.04);
+            --accent-color: #8b9dc3;
+            --accent-hover: rgba(139,157,195,0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #262626;
+            --bg-tertiary: #2d2d2d;
+            --bg-accent: #333;
+            --text-primary: #e2e8f0;
+            --text-secondary: #cbd5e0;
+            --text-muted: #718096;
+            --border-color: #3a3a3a;
+            --shadow-light: rgba(0,0,0,0.2);
+            --shadow-medium: rgba(0,0,0,0.3);
+            --accent-color: #a8bfd8;
+            --accent-hover: rgba(168,191,216,0.15);
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', Arial, sans-serif;
+            background: var(--bg-primary);
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s ease;
+        }
+        .navbar {
+            width: 100%;
+            background: linear-gradient(90deg, #8b9dc3 0%, #a8bfd8 100%);
+            color: #fff;
+            padding: 0 0 0 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+        }
+        .navbar-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            height: 56px;
+            flex-wrap: wrap;
+            position: relative;
+        }
+        .navbar-title {
+            font-size: 1.6rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            flex: 1 1 auto;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .navbar-desc {
+            font-size: 1rem;
+            opacity: 0.85;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 40vw;
+            transition: opacity 0.2s;
+        }
+        .navbar-btn, .navbar-category-btn {
+            margin-left: 18px;
+            background: rgba(255,255,255,0.18);
+            color: #fff;
+            border: 1px solid #fff;
+            border-radius: 5px;
+            font-size: 1rem;
+            padding: 6px 18px;
+            cursor: pointer;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-decoration: none;
+            transition: background 0.2s, color 0.2s;
+            display: inline-block;
+        }
+        .theme-toggle {
+            margin-left: 18px;
+            background: rgba(255,255,255,0.18);
+            color: #fff;
+            border: 1px solid #fff;
+            border-radius: 5px;
+            font-size: 1rem;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s, color 0.2s;
+            display: inline-block;
+        }
+        .theme-toggle:hover {
+            background: #fff;
+            color: var(--accent-color);
+        }
+        .navbar-btn:hover, .navbar-category-btn:hover {
+            background: #fff;
+            color: #8b9dc3;
+            text-decoration: none;
+        }
+        /* 移动端隐藏desc，按钮变菜单 */
+        @media (max-width: 600px) {
+            .navbar-inner {
+                padding: 0 8px;
+                height: auto;
+                min-height: 48px;
+            }
+            .navbar-title {
+                font-size: 1.1rem;
+                max-width: 55vw;
+            }
+            .navbar-desc {
+                display: none !important;
+            }
+            .navbar-btn, .navbar-category-btn {
+                display: none;
+            }
+            .navbar-menu-icon {
+                display: flex !important;
+            }
+        }
+        /* 侧边菜单样式 */
+        .side-menu {
+            position: fixed;
+            top: 0;
+            right: -220px;
+            width: 200px;
+            height: 100vh;
+            background: var(--bg-secondary);
+            box-shadow: -2px 0 16px var(--shadow-medium);
+            z-index: 3000;
+            transition: right 0.25s;
+            display: flex;
+            flex-direction: column;
+            padding: 32px 18px 18px 18px;
+        }
+        .side-menu.open {
+            right: 0;
+        }
+        .side-menu a {
+            margin: 12px 0;
+            padding: 10px 0;
+            color: var(--accent-color);
+            font-size: 1.08rem;
+            text-decoration: none;
+            border-bottom: 1px solid var(--border-color);
+            display: block;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .side-menu a:last-child {
+            border-bottom: none;
+        }
+        .side-menu-close {
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            font-size: 1.6rem;
+            color: #888;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .navbar-menu-icon {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            /* 绝对定位到最右侧并垂直居中 */
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.18);
+            border-radius: 6px;
+            border: 1px solid #fff;
+            cursor: pointer;
+            font-size: 1.6rem;
+            color: #fff;
+            z-index: 10;
+        }
+        .navbar-menu-icon:active {
+            background: #fff;
+            color: #8b9dc3;
+        }
+        @media (max-width: 600px) {
+            .navbar-inner {
+                padding: 0 8px;
+                height: auto;
+                min-height: 48px;
+            }
+            .navbar-title {
+                font-size: 1.1rem;
+                max-width: 55vw;
+            }
+            .navbar-desc {
+                display: none !important;
+            }
+            .navbar-btn, .navbar-category-btn {
+                display: none;
+            }
+            .navbar-menu-icon {
+                display: flex !important;
+            }
+        }
+        h1 {
+            display: none;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 32px auto 0 auto;
+            padding: 0 16px;
+        }
+        .category {
+            margin-bottom: 48px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px var(--shadow-light);
+            padding: 24px 18px 18px 18px;
+        }
+        h2 {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-top: 0;
+            margin-bottom: 18px;
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            letter-spacing: 1px;
+        }
+        .media-section-title {
+            font-size: 1.08rem;
+            color: var(--accent-color);
+            margin: 18px 0 10px 0;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        /* 标签页样式 */
+        .tab-container {
+            display: flex;
+            margin: 18px 0 18px 0;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1.08rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            margin-right: 20px;
+        }
+        .tab-btn.active {
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
+        }
+        .tab-btn:hover {
+            color: var(--accent-color);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .media-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center; /* 居中卡片 */
+            /* 移除 max-width/min-width/固定宽度等限制，允许子项自适应宽度 */
+        }
+        .media-item {
+            width: 210px;
+            max-width: 99vw;
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            box-shadow: 0 1px 6px var(--shadow-medium);
+            padding: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: box-shadow 0.2s, width 0.2s, background 0.2s;
+            position: relative;
+            border: 1px solid var(--border-color);
+        }
+        .media-item:hover {
+            box-shadow: 0 4px 16px var(--accent-hover);
+            background: var(--bg-accent);
+        }
+        /* 9:16比例卡片 */
+        .media-item.ratio-9-16 {
+            aspect-ratio: 9 / 16;
+            width: 150px;
+            height: 266px;
+            max-width: 95vw;
+        }
+        /* 16:9比例卡片，高度与9:16相同 */
+        .media-item.ratio-16-9 {
+            aspect-ratio: 16 / 9;
+            width: 266px;
+            height: 150px;
+            max-width: 95vw;
+            max-height: 266px;
+        }
+        /* 3:4比例卡片（竖图） */
+        .media-item.ratio-3-4 {
+            aspect-ratio: 3 / 4;
+            width: 210px;
+            height: 280px;
+            max-width: 99vw;
+            min-width: 0;
+            min-height: 0;
+        }
+        /* 4:3比例卡片（横图，高度与3:4相同，仅高度200px，宽度自适应） */
+        .media-item.ratio-4-3 {
+            aspect-ratio: 4 / 3;
+            height: 210px;
+            max-height: 210px;
+            width: auto;
+            min-width: 0;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .media-item .img-wrapper {
+            width: 100%;
+            height: 100%;
+            min-height: 0;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 6px;
+            background: var(--bg-accent);
+            text-align: center;
+            position: relative;
+            flex: 1;
+        }
+        .media-item img, .media-item video {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            transition: box-shadow 0.2s;
+            align-self: center;
+        }
+        .media-item img:hover {
+            box-shadow: 0 0 0 2px var(--accent-color);
+        }
+        .zoomed {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 80vw;
+            height: 80vh;
+            max-width: 80vw;
+            max-height: 80vh;
+            z-index: 10001;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 20px rgba(0,0,0,0.7);
+            /* 修改为半透明背景 */
+            background: rgba(255,255,255,0.85);
+            border-radius: 12px;
+            object-fit: contain;
+            display: block;
+            width: 80vw !important;
+            height: 80vh !important;
+            max-width: 80vw !important;
+            max-height: 80vh !important;
+            min-width: 0 !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        /* 优化竖屏和移动端放大图片纵向空间利用 */
+        @media (max-width: 600px), (orientation: portrait) {
+            .container {
+                padding: 0 2vw;
+            }
+            .category {
+                padding: 16px 4px 10px 4px;
+            }
+            .media-list { gap: 8px; }
+            .media-item,
+            .media-list.large-card .media-item {
+                width: 100vw !important;
+                max-width: 100vw !important;
+                padding: 2vw;
+            }
+            .media-item.ratio-9-16,
+            .media-item.ratio-16-9,
+            .media-item.ratio-3-4,
+            .media-item.ratio-4-3 {
+                width: 100vw !important;
+                max-width: 100vw !important;
+                height: auto;
+                aspect-ratio: unset;
+            }
+            .img-wrapper {
+                height: 80vw;
+            }
+            .media-item img, .media-item video {
+                max-height: 98vw;
+            }
+            .zoomed {
+                width: 99vw;
+                height: 80vh;
+                max-width: 99vw;
+                max-height: 80vh;
+            }
+            .zoom-nav-btn { width: 38px; height: 38px; font-size: 18px; margin: 0 4px; }
+        }
+        @media (orientation: portrait) {
+            .zoomed {
+                width: 98vw;
+                height: 80vh;
+                max-width: 98vw;
+                max-height: 80vh;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+            }
+        }
+        .zoom-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 10000;
+        }
+        .zoom-nav-btns {
+            position: fixed;
+            top: 50%;
+            left: 0;
+            width: 100vw;
+            display: flex;
+            justify-content: space-between;
+            z-index: 10002;
+            pointer-events: none;
+        }
+        .zoom-nav-btn {
+            pointer-events: auto;
+            background: rgba(255,255,255,0.85);
+            border: 1px solid #bbb;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 12px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        .zoom-nav-btn:active {
+            background: #e0e0e0;
+        }
+        .zoom-close-btn {
+            position: fixed;
+            top: 24px;
+            right: 32px;
+            z-index: 10003;
+            background: rgba(255,255,255,0.92);
+            border: 1px solid #bbb;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            font-size: 26px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: background 0.2s, color 0.2s;
+        }
+        .zoom-close-btn:hover {
+            background: #f4f6fa;
+            color: #e74c3c;
+        }
+        @media (max-width: 600px) {
+            .zoom-close-btn {
+                top: 8px;
+                right: 10px;
+                width: 36px;
+                height: 36px;
+                font-size: 20px;
+            }
+        }
+        /* 移动端侧边菜单 */
+        @media (max-width: 600px) {
+            .side-menu {
+                right: -250px;
+                width: 220px;
+                padding: 24px 16px;
+            }
+            .side-menu.open {
+                right: 0;
+            }
+            .side-menu a {
+                font-size: 1rem;
+            }
+            .side-menu-close {
+                top: 8px;
+                right: 10px;
+                width: 36px;
+                height: 36px;
+                font-size: 24px;
+            }
+        }
+        .video-cover {
+            position: relative;
+            width: 150px;
+            height: 100px;
+            background: var(--bg-accent);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 6px var(--shadow-medium);
+            cursor: pointer;
+            transition: box-shadow 0.2s;
+        }
+        .video-cover:hover {
+            box-shadow: 0 4px 16px var(--accent-hover);
+        }
+        .video-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .video-play-icon {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%,-50%);
+            width: 38px;
+            height: 38px;
+            background: rgba(0,0,0,0.45);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .video-play-icon:after {
+            content: '';
+            display: block;
+            width: 0;
+            height: 0;
+            border-left: 16px solid #fff;
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+            margin-left: 4px;
+        }
+        .video-title {
+            text-align: center;
+            font-size: 0.98rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-inner">
+            <span class="navbar-title">Lumivault</span>
+            <span class="navbar-desc">Media Library</span>
+            <a href="{{ url_for('nav') }}" class="navbar-category-btn">分类</a>
+            <a href="{{ url_for('config') }}" class="navbar-btn">设置</a>
+            <button class="theme-toggle" id="themeToggle" title="切换主题">🌙</button>
+            <div class="navbar-menu-icon" id="navbarMenuIcon" title="菜单" style="display:none;">
+                &#9776;
+            </div>
+        </div>
+    </div>
+    <!-- 侧边菜单 -->
+    <div class="side-menu" id="sideMenu">
+        <button class="side-menu-close" id="sideMenuClose" title="关闭菜单">&times;</button>
+        <a href="{{ url_for('nav') }}">分类</a>
+        <a href="{{ url_for('config') }}">设置</a>
+    </div>
+    <div class="container">
+    {% for category, files in categories.items() %}
+    <div class="category">
+        <h2>{{ category }}</h2>
+        
+        <!-- 标签页导航 -->
+        <div class="tab-container">
+            {% if files.images %}
+            <button class="tab-btn active" data-tab="images-{{ loop.index }}">图片 ({{ files.images|length }})</button>
+            {% endif %}
+            {% if files.videos %}
+            <button class="tab-btn {% if not files.images %}active{% endif %}" data-tab="videos-{{ loop.index }}">视频 ({{ files.videos|length }})</button>
+            {% endif %}
+        </div>
+        
+        <!-- 图片标签页内容 -->
+        {% if files.images %}
+        <div class="tab-content active" id="images-{{ loop.index }}">
+            <div class="media-list" id="mediaList-img-{{ loop.index }}">
+                {% for image in files.images %}
+                {# 判断图片比例，假设文件名包含"4x3"或"4_3"或"4-3"，否则默认3:4 #}
+                {% set ratio = "ratio-3-4" %}
+                {% if "4x3" in image or "4_3" in image or "4-3" in image %}
+                    {% set ratio = "ratio-4-3" %}
+                {% endif %}
+                <div class="media-item {{ ratio }}" data-category="{{ category }}" data-index="{{ loop.index0 }}">
+                    <a href="{{ url_for('media', category=category, filename=image) }}" target="_blank" class="image-link">
+                        <div class="img-wrapper">
+                            <img src="{{ url_for('media', category=category, filename=image) }}" alt="" class="zoomable-image"
+                                 data-category="{{ category }}" data-index="{{ loop.index0 }}">
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- 视频标签页内容 -->
+        {% if files.videos %}
+        <div class="tab-content {% if not files.images %}active{% endif %}" id="videos-{{ loop.index }}">
+            <div class="media-list" id="mediaList-video-{{ loop.index }}">
+                {% for video in files.videos %}
+                <div class="media-item ratio-4-3" style="padding:0; background:none; border:none; box-shadow:none;">
+                    <a href="{{ url_for('video_player', category=category, filename=video) }}" style="text-decoration:none;">
+                        <div class="video-cover">
+                            {# 优先用自动生成的封面 #}
+                            {% set thumb_key = category ~ '/' ~ video %}
+                            <video
+                                width="100%"
+                                height="100%"
+                                poster="{% if video_thumbs[thumb_key] is defined %}{{ url_for('video_thumb', thumb_name=video_thumbs[thumb_key]) }}{% else %}https://img.icons8.com/ios-filled/100/cccccc/video.png{% endif %}"
+                                style="object-fit:cover;display:block;border-radius:8px;background:#eaf1fb;"
+                                preload="none"
+                                muted
+                                playsinline
+                                ></video>
+                            <span class="video-play-icon"></span>
+                        </div>
+                        <div class="video-title">{{ video }}</div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+    </div>
+    <script>
+    // 主题切换功能
+    function initTheme() {
+        const themeToggle = document.getElementById('themeToggle');
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        themeToggle.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+        
+        themeToggle.addEventListener('click', function() {
+            const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        });
+    }
+    initTheme();
+
+    // 收集所有图片信息
+    const allImages = {};
+    document.querySelectorAll('.category').forEach(function(categoryDiv) {
+        const category = categoryDiv.querySelector('h2').textContent.trim();
+        const imgs = Array.from(categoryDiv.querySelectorAll('.zoomable-image'));
+        allImages[category] = imgs;
+    });
+
+    let currentZoom = {
+        img: null,
+        category: null,
+        index: null
+    };
+
+    function showZoomNavBtns(show) {
+        let nav = document.querySelector('.zoom-nav-btns');
+        let closeBtn = document.querySelector('.zoom-close-btn');
+        if (nav) nav.style.display = show ? 'flex' : 'none';
+        if (closeBtn) closeBtn.style.display = show ? 'flex' : 'none';
+    }
+
+    function updateZoomedImage(category, idx) {
+        const imgs = allImages[category];
+        if (!imgs || idx < 0 || idx >= imgs.length) return;
+        const src = imgs[idx].src;
+        const zoomed = document.querySelector('.zoomed');
+        if (zoomed) {
+            zoomed.src = src;
+            currentZoom.category = category;
+            currentZoom.index = idx;
+        }
+    }
+
+    function closeZoom() {
+        let zoomed = document.querySelector('.zoomed');
+        if (zoomed) zoomed.classList.remove('zoomed');
+        let overlay = document.querySelector('.zoom-overlay');
+        if (overlay) overlay.remove();
+        showZoomNavBtns(false);
+        // 移除关闭按钮
+        let closeBtn = document.querySelector('.zoom-close-btn');
+        if (closeBtn) closeBtn.style.display = 'none';
+        document.body.style.overflow = '';
+        currentZoom.img = null;
+        currentZoom.category = null;
+        currentZoom.index = null;
+    }
+
+    // 创建导航按钮和关闭按钮
+    function createZoomNavBtns() {
+        if (!document.querySelector('.zoom-nav-btns')) {
+            const nav = document.createElement('div');
+            nav.className = 'zoom-nav-btns';
+            nav.innerHTML = `
+                <button class="zoom-nav-btn" id="zoomPrevBtn" title="上一张">&#8592;</button>
+                <button class="zoom-nav-btn" id="zoomNextBtn" title="下一张">&#8594;</button>
+            `;
+            document.body.appendChild(nav);
+            nav.style.display = 'none';
+
+            nav.querySelector('#zoomPrevBtn').onclick = function(e) {
+                e.stopPropagation();
+                if (currentZoom.category && currentZoom.index > 0) {
+                    updateZoomedImage(currentZoom.category, currentZoom.index - 1);
+                }
+            };
+            nav.querySelector('#zoomNextBtn').onclick = function(e) {
+                e.stopPropagation();
+                const imgs = allImages[currentZoom.category];
+                if (imgs && currentZoom.index < imgs.length - 1) {
+                    updateZoomedImage(currentZoom.category, currentZoom.index + 1);
+                }
+            };
+        }
+        if (!document.querySelector('.zoom-close-btn')) {
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'zoom-close-btn';
+            closeBtn.title = '关闭';
+            closeBtn.innerHTML = '&times;';
+            closeBtn.onclick = function(e) {
+                e.stopPropagation();
+                closeZoom();
+            };
+            closeBtn.style.display = 'none';
+            document.body.appendChild(closeBtn);
+        }
+    }
+    createZoomNavBtns();
+
+    // 放大图片功能（增强，支持滑动）
+    document.querySelectorAll('.zoomable-image').forEach(function(img) {
+        img.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeZoom();
+            // 创建放大用的大图
+            const zoomedImg = img.cloneNode(true);
+            zoomedImg.classList.add('zoomed');
+            // 移除已存在的放大图
+            document.querySelectorAll('.zoomed').forEach(function(z) {
+                if (z !== zoomedImg) z.remove();
+            });
+            document.body.appendChild(zoomedImg);
+            document.body.style.overflow = 'hidden';
+            // 添加遮罩
+            let overlay = document.createElement('div');
+            overlay.className = 'zoom-overlay';
+            overlay.onclick = closeZoom;
+            document.body.appendChild(overlay);
+
+            // 记录当前
+            const category = img.getAttribute('data-category');
+            const index = parseInt(img.getAttribute('data-index'));
+            currentZoom.img = zoomedImg;
+            currentZoom.category = category;
+            currentZoom.index = index;
+
+            showZoomNavBtns(true);
+
+            document.onkeydown = function(ev) {
+                if (!document.querySelector('.zoomed')) return;
+                if (ev.key === 'ArrowLeft') {
+                    if (currentZoom.category && currentZoom.index > 0) {
+                        updateZoomedImage(currentZoom.category, currentZoom.index - 1);
+                    }
+                } else if (ev.key === 'ArrowRight') {
+                    const imgs = allImages[currentZoom.category];
+                    if (imgs && currentZoom.index < imgs.length - 1) {
+                        updateZoomedImage(currentZoom.category, currentZoom.index + 1);
+                    }
+                } else if (ev.key === 'Escape') {
+                    closeZoom();
+                }
+            };
+
+            // 移动端滑动支持
+            let startX = null;
+            let startY = null;
+            let moved = false;
+            zoomedImg.addEventListener('touchstart', function(ev) {
+                if (ev.touches.length === 1) {
+                    startX = ev.touches[0].clientX;
+                    startY = ev.touches[0].clientY;
+                    moved = false;
+                }
+            }, {passive: true});
+            zoomedImg.addEventListener('touchmove', function(ev) {
+                moved = true;
+            }, {passive: true});
+            zoomedImg.addEventListener('touchend', function(ev) {
+                if (!moved || startX === null) return;
+                let endX = ev.changedTouches[0].clientX;
+                let endY = ev.changedTouches[0].clientY;
+                let dx = endX - startX;
+                let dy = endY - startY;
+                if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+                    // 左右滑动
+                    if (dx < 0) {
+                        const imgs = allImages[currentZoom.category];
+                        if (imgs && currentZoom.index < imgs.length - 1) {
+                            updateZoomedImage(currentZoom.category, currentZoom.index + 1);
+                        }
+                    } else {
+                        if (currentZoom.category && currentZoom.index > 0) {
+                            updateZoomedImage(currentZoom.category, currentZoom.index - 1);
+                        }
+                    }
+                }
+                startX = null;
+                startY = null;
+                moved = false;
+            }, {passive: true});
+        });
+    });
+
+    // 点击放大图片时禁止链接跳转
+    document.querySelectorAll('.image-link').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            let img = link.querySelector('.zoomable-image');
+            if (img && img.classList.contains('zoomed')) {
+                e.preventDefault();
+            }
+        });
+    });
+
+    // 关闭放大时移除键盘事件
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('zoom-overlay')) {
+            document.onkeydown = null;
+        }
+    });
+
+    // 移动端侧边菜单
+    function setupSideMenu() {
+        var menuIcon = document.getElementById('navbarMenuIcon');
+        var sideMenu = document.getElementById('sideMenu');
+        var sideMenuClose = document.getElementById('sideMenuClose');
+        function openMenu() {
+            sideMenu.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeMenu() {
+            sideMenu.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        if (menuIcon && sideMenu && sideMenuClose) {
+            menuIcon.addEventListener('click', openMenu);
+            sideMenuClose.addEventListener('click', closeMenu);
+            // 点击菜单外部关闭
+            document.addEventListener('click', function(e) {
+                if (sideMenu.classList.contains('open') && !sideMenu.contains(e.target) && e.target !== menuIcon) {
+                    closeMenu();
+                }
+            });
+        }
+    }
+    setupSideMenu();
+
+    // 标签页切换功能
+    function setupTabs() {
+        document.querySelectorAll('.tab-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var targetTabId = this.getAttribute('data-tab');
+                var categoryDiv = this.closest('.category');
+                
+                // 移除同组标签的active状态
+                categoryDiv.querySelectorAll('.tab-btn').forEach(function(b) {
+                    b.classList.remove('active');
+                });
+                categoryDiv.querySelectorAll('.tab-content').forEach(function(content) {
+                    content.classList.remove('active');
+                });
+                
+                // 激活当前标签
+                this.classList.add('active');
+                document.getElementById(targetTabId).classList.add('active');
+            });
+        });
+    }
+    setupTabs();
+    </script>
+</body>
+</html>
