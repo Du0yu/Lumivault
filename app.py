@@ -7,12 +7,12 @@ from werkzeug.utils import secure_filename
 from PIL import Image
 import threading
 import time
+from urllib.parse import quote
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # 用于flash消息
 
 CONFIG_PATH = 'config.json'
-THUMB_DIR = 'video_thumbs'
 
 def get_base_path():
     if not os.path.exists(CONFIG_PATH):
@@ -20,6 +20,12 @@ def get_base_path():
     with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
         config = json.load(f)
     return config.get('base', '')
+
+def get_thumb_dir():
+    base_path = get_base_path()
+    if not base_path:
+        return os.path.abspath('video_thumbs')
+    return os.path.join(base_path, 'video_thumbs')
 
 def get_image_ratio(image_path):
     """
@@ -48,6 +54,8 @@ def get_image_ratio(image_path):
 def get_media_files(base_path):
     categories = {}
     for folder in os.listdir(base_path):
+        if folder == 'video_thumbs':
+            continue  # 排除video_thumbs文件夹
         folder_path = os.path.join(base_path, folder)
         if os.path.isdir(folder_path):
             images = []
@@ -75,17 +83,22 @@ def get_media_files(base_path):
     return categories
 
 def ensure_thumb_dir():
-    if not os.path.exists(THUMB_DIR):
-        os.makedirs(THUMB_DIR)
+    thumb_dir = get_thumb_dir()
+    if not os.path.exists(thumb_dir):
+        os.makedirs(thumb_dir)
 
 def get_video_thumb(base_path, category, video_filename):
     """
     截取视频第一帧作为封面，返回封面图片的相对路径
     """
     ensure_thumb_dir()
+    thumb_dir = get_thumb_dir()
+    # 对category和文件名做URL安全编码，避免中文或特殊字符导致文件名异常
+    safe_category = quote(category, safe='')
+    safe_filename = quote(os.path.splitext(video_filename)[0], safe='')
     video_path = os.path.join(base_path, category, video_filename)
-    thumb_name = f"{category}__{os.path.splitext(video_filename)[0]}.jpg"
-    thumb_path = os.path.join(THUMB_DIR, thumb_name)
+    thumb_name = f"{safe_category}__{safe_filename}.jpg"
+    thumb_path = os.path.join(thumb_dir, thumb_name)
     if not os.path.exists(thumb_path):
         try:
             cap = cv2.VideoCapture(video_path)
@@ -174,16 +187,18 @@ def video_player(category, filename):
 @app.route('/video_thumb/<thumb_name>')
 def video_thumb(thumb_name):
     # 直接返回封面图片
-    return send_from_directory(THUMB_DIR, thumb_name)
+    thumb_dir = get_thumb_dir()
+    return send_from_directory(thumb_dir, thumb_name)
 
 @app.route('/reload_library', methods=['POST'])
 def reload_library():
     """重载媒体库，清除缓存"""
     try:
         # 清除视频缩略图缓存
-        if os.path.exists(THUMB_DIR):
-            for file in os.listdir(THUMB_DIR):
-                file_path = os.path.join(THUMB_DIR, file)
+        thumb_dir = get_thumb_dir()
+        if os.path.exists(thumb_dir):
+            for file in os.listdir(thumb_dir):
+                file_path = os.path.join(thumb_dir, file)
                 if os.path.isfile(file_path):
                     os.remove(file_path)
         
