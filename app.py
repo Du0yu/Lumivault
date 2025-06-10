@@ -4,6 +4,7 @@ import json
 import sys
 import cv2
 from werkzeug.utils import secure_filename
+from PIL import Image
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # 用于flash消息
@@ -18,6 +19,30 @@ def get_base_path():
         config = json.load(f)
     return config.get('base', '')
 
+def get_image_ratio(image_path):
+    """
+    获取图片的长宽比，返回最接近的比例类型
+    """
+    try:
+        with Image.open(image_path) as img:
+            width, height = img.size
+            ratio = width / height
+            
+            # 定义标准比例和容差
+            ratios = {
+                '4-3': 4/3,      # 1.333
+                '3-4': 3/4,      # 0.75
+                '16-9': 16/9,    # 1.778
+                '9-16': 9/16     # 0.5625
+            }
+            
+            # 找到最接近的比例
+            closest_ratio = min(ratios.items(), key=lambda x: abs(x[1] - ratio))
+            return closest_ratio[0]
+    except Exception as e:
+        print(f"无法读取图片尺寸: {image_path} {e}")
+        return '3-4'  # 默认返回3:4
+
 def get_media_files(base_path):
     categories = {}
     for folder in os.listdir(base_path):
@@ -28,9 +53,19 @@ def get_media_files(base_path):
             for file in os.listdir(folder_path):
                 ext = os.path.splitext(file)[1].lower()
                 if ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp']:
-                    images.append(file)
+                    # 获取图片比例信息
+                    image_path = os.path.join(folder_path, file)
+                    ratio = get_image_ratio(image_path)
+                    images.append({
+                        'filename': file,
+                        'ratio': ratio
+                    })
                 elif ext in ['.mp4', '.avi', '.mov', '.mkv', '.webm']:
                     videos.append(file)
+            
+            # 按比例分组排序图片
+            images.sort(key=lambda x: x['ratio'])
+            
             categories[folder] = {
                 'images': images,
                 'videos': videos
@@ -102,7 +137,7 @@ def nav():
     # 获取每个类别的封面图（第一张图片，没有则None）
     covers = {}
     for cat, files in all_categories.items():
-        covers[cat] = files['images'][0] if files['images'] else None
+        covers[cat] = files['images'][0]['filename'] if files['images'] else None
     return render_template('nav.html', covers=covers)
 
 @app.route('/album')

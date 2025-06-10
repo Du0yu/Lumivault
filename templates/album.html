@@ -294,6 +294,21 @@
             justify-content: center; /* 居中卡片 */
             /* 移除 max-width/min-width/固定宽度等限制，允许子项自适应宽度 */
         }
+        .ratio-group {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .ratio-separator {
+            width: 100%;
+            height: 1px;
+            background: var(--border-color);
+            margin: 10px 0;
+            opacity: 0.3;
+        }
         .media-item {
             width: 210px;
             max-width: 99vw;
@@ -313,21 +328,6 @@
             box-shadow: 0 4px 16px var(--accent-hover);
             background: var(--bg-accent);
         }
-        /* 9:16比例卡片 */
-        .media-item.ratio-9-16 {
-            aspect-ratio: 9 / 16;
-            width: 150px;
-            height: 266px;
-            max-width: 95vw;
-        }
-        /* 16:9比例卡片，高度与9:16相同 */
-        .media-item.ratio-16-9 {
-            aspect-ratio: 16 / 9;
-            width: 266px;
-            height: 150px;
-            max-width: 95vw;
-            max-height: 266px;
-        }
         /* 3:4比例卡片（竖图） */
         .media-item.ratio-3-4 {
             aspect-ratio: 3 / 4;
@@ -336,6 +336,7 @@
             max-width: 99vw;
             min-width: 0;
             min-height: 0;
+            overflow: hidden;
         }
         /* 4:3比例卡片（横图，高度与3:4相同，仅高度200px，宽度自适应） */
         .media-item.ratio-4-3 {
@@ -348,6 +349,24 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            overflow: hidden;
+        }
+        /* 9:16比例卡片 */
+        .media-item.ratio-9-16 {
+            aspect-ratio: 9 / 16;
+            width: 150px;
+            height: 266px;
+            max-width: 95vw;
+            overflow: hidden;
+        }
+        /* 16:9比例卡片，高度与9:16相同 */
+        .media-item.ratio-16-9 {
+            aspect-ratio: 16 / 9;
+            width: 266px;
+            height: 150px;
+            max-width: 95vw;
+            max-height: 266px;
+            overflow: hidden;
         }
         .media-item .img-wrapper {
             width: 100%;
@@ -635,15 +654,11 @@
         <div class="tab-content active" id="images-{{ loop.index }}">
             <div class="media-list" id="mediaList-img-{{ loop.index }}">
                 {% for image in files.images %}
-                {# 判断图片比例，假设文件名包含"4x3"或"4_3"或"4-3"，否则默认3:4 #}
-                {% set ratio = "ratio-3-4" %}
-                {% if "4x3" in image or "4_3" in image or "4-3" in image %}
-                    {% set ratio = "ratio-4-3" %}
-                {% endif %}
-                <div class="media-item {{ ratio }}" data-category="{{ category }}" data-index="{{ loop.index0 }}">
-                    <a href="{{ url_for('media', category=category, filename=image) }}" target="_blank" class="image-link">
+                {% set ratio_class = "ratio-" + image.ratio %}
+                <div class="media-item {{ ratio_class }}" data-category="{{ category }}" data-index="{{ loop.index0 }}">
+                    <a href="{{ url_for('media', category=category, filename=image.filename) }}" target="_blank" class="image-link">
                         <div class="img-wrapper">
-                            <img src="{{ url_for('media', category=category, filename=image) }}" alt="" class="zoomable-image"
+                            <img src="{{ url_for('media', category=category, filename=image.filename) }}" alt="" class="zoomable-image"
                                  data-category="{{ category }}" data-index="{{ loop.index0 }}">
                         </div>
                     </a>
@@ -701,6 +716,53 @@
         });
     }
     initTheme();
+
+    // 按比例分组图片
+    function groupImagesByRatio() {
+        document.querySelectorAll('.media-list').forEach(function(mediaList) {
+            if (!mediaList.querySelector('.media-item img')) return; // 跳过视频列表
+            
+            const items = Array.from(mediaList.querySelectorAll('.media-item'));
+            const ratioGroups = {};
+            
+            // 按比例分组
+            items.forEach(function(item) {
+                const ratioClass = item.className.match(/ratio-[\w-]+/);
+                if (ratioClass) {
+                    const ratio = ratioClass[0];
+                    if (!ratioGroups[ratio]) {
+                        ratioGroups[ratio] = [];
+                    }
+                    ratioGroups[ratio].push(item);
+                }
+            });
+            
+            // 清空原容器
+            mediaList.innerHTML = '';
+            
+            // 重新添加分组后的元素
+            Object.keys(ratioGroups).forEach(function(ratio, index) {
+                if (index > 0) {
+                    // 添加分隔线
+                    const separator = document.createElement('div');
+                    separator.className = 'ratio-separator';
+                    mediaList.appendChild(separator);
+                }
+                
+                const group = document.createElement('div');
+                group.className = 'ratio-group';
+                ratioGroups[ratio].forEach(function(item) {
+                    group.appendChild(item);
+                });
+                mediaList.appendChild(group);
+            });
+        });
+    }
+    
+    // 页面加载完成后执行分组
+    document.addEventListener('DOMContentLoaded', function() {
+        groupImagesByRatio();
+    });
 
     // 收集所有图片信息
     const allImages = {};
