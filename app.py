@@ -98,6 +98,10 @@ def get_video_thumb(base_path, category, video_filename):
 
 @app.route('/')
 def index():
+    return render_template('home.html')
+
+@app.route('/vault')
+def vault():
     base_path = get_base_path()
     if not base_path or not os.path.exists(base_path):
         flash('请先配置媒体根目录路径')
