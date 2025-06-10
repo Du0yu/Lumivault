@@ -4,119 +4,9 @@
     <meta charset="UTF-8">
     <title>配置媒体根目录</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
-        :root {
-            --bg-primary: #f8fafc;
-            --bg-secondary: #fff;
-            --bg-accent: #f8f9fa;
-            --text-primary: #4a5568;
-            --text-secondary: #666;
-            --border-color: #e8edf5;
-            --shadow-light: rgba(0,0,0,0.03);
-            --accent-color: #8b9dc3;
-            --input-bg: #fff;
-        }
-
-        [data-theme="dark"] {
-            --bg-primary: #1a1a1a;
-            --bg-secondary: #262626;
-            --bg-accent: #2d2d2d;
-            --text-primary: #e2e8f0;
-            --text-secondary: #cbd5e0;
-            --border-color: #3a3a3a;
-            --shadow-light: rgba(0,0,0,0.2);
-            --accent-color: #a8bfd8;
-            --input-bg: #333;
-        }
-
-        body {
-            font-family: 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', Arial, sans-serif;
-            background: var(--bg-primary);
-            margin: 0;
-            padding: 0;
-            transition: background-color 0.3s ease;
-        }
-        .navbar {
-            width: 100%;
-            background: linear-gradient(90deg, #8b9dc3 0%, #a8bfd8 100%);
-            color: #fff;
-            padding: 0 0 0 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-            position: sticky;
-            top: 0;
-            z-index: 2000;
-        }
-        .navbar-inner {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 24px;
-            display: flex;
-            align-items: center;
-            height: 56px;
-            flex-wrap: wrap;
-            position: relative;
-        }
-        .navbar-title {
-            font-size: 1.6rem;
-            font-weight: bold;
-            letter-spacing: 2px;
-            flex: 1 1 auto;
-            min-width: 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .navbar-desc {
-            font-size: 1rem;
-            opacity: 0.85;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 40vw;
-            transition: opacity 0.2s;
-        }
-        .navbar-btn, .navbar-category-btn {
-            margin-left: 18px;
-            background: rgba(255,255,255,0.18);
-            color: #fff;
-            border: 1px solid #fff;
-            border-radius: 5px;
-            font-size: 1rem;
-            padding: 6px 18px;
-            cursor: pointer;
-            font-weight: 500;
-            letter-spacing: 1px;
-            text-decoration: none;
-            transition: background 0.2s, color 0.2s;
-            display: inline-block;
-        }
-        .navbar-btn:hover, .navbar-category-btn:hover {
-            background: #fff;
-            color: #8b9dc3;
-            text-decoration: none;
-        }
-        .theme-toggle {
-            margin-left: 18px;
-            background: rgba(255,255,255,0.18);
-            color: #fff;
-            border: 1px solid #fff;
-            border-radius: 5px;
-            font-size: 1rem;
-            padding: 6px 12px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background 0.2s, color 0.2s;
-            display: inline-block;
-        }
-        .theme-toggle:hover {
-            background: #fff;
-            color: var(--accent-color);
-        }
-        .container {
-            max-width: 600px;
-            margin: 32px auto 0 auto;
-            padding: 0 16px;
-        }
+        /* 配置页面特有样式 */
         .config-card {
             background: var(--bg-secondary);
             border-radius: 12px;
@@ -124,7 +14,8 @@
             padding: 32px;
             border: 1px solid var(--border-color);
         }
-        h1 {
+        
+        .config-card h1 {
             font-size: 1.6rem;
             color: var(--text-primary);
             margin-top: 0;
@@ -132,15 +23,18 @@
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 12px;
             letter-spacing: 1px;
+            display: block;
         }
-        label {
+        
+        .config-card label {
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
             color: var(--text-primary);
             font-size: 1.1rem;
         }
-        input[type="text"] {
+        
+        .config-card input[type="text"] {
             width: 100%;
             padding: 12px 16px;
             margin-bottom: 20px;
@@ -149,14 +43,16 @@
             font-size: 1rem;
             transition: border-color 0.2s;
             box-sizing: border-box;
-            background: var(--input-bg);
+            background: var(--bg-primary);
             color: var(--text-primary);
         }
-        input[type="text"]:focus {
+        
+        .config-card input[type="text"]:focus {
             outline: none;
             border-color: var(--accent-color);
         }
-        button {
+        
+        .config-card button {
             background: linear-gradient(90deg, #8b9dc3 0%, #a8bfd8 100%);
             color: #fff;
             border: none;
@@ -168,10 +64,12 @@
             transition: transform 0.2s, box-shadow 0.2s;
             letter-spacing: 1px;
         }
-        button:hover {
+        
+        .config-card button:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 16px rgba(139,157,195,0.25);
         }
+        
         .msg {
             background: #ffeaa7;
             color: #d63031;
@@ -181,18 +79,21 @@
             border-left: 4px solid #d63031;
             font-weight: 500;
         }
+        
         .example {
-            background: var(--bg-accent);
+            background: var(--bg-tertiary);
             padding: 16px;
             border-radius: 8px;
             margin-top: 24px;
             border-left: 4px solid var(--accent-color);
         }
+        
         .example p {
             margin: 0;
             color: var(--text-secondary);
             line-height: 1.6;
         }
+        
         .example code {
             background: #e9ecef;
             padding: 2px 6px;
@@ -200,29 +101,12 @@
             font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
             color: #d63031;
         }
+        
         @media (max-width: 600px) {
-            .navbar-inner {
-                padding: 0 8px;
-                height: auto;
-                min-height: 48px;
-            }
-            .navbar-title {
-                font-size: 1.1rem;
-                max-width: 80vw;
-            }
-            .navbar-desc {
-                display: none !important;
-            }
-            .navbar-btn, .navbar-category-btn {
-                display: none;
-            }
-            .container {
-                padding: 0 8px;
-            }
             .config-card {
                 padding: 20px;
             }
-            h1 {
+            .config-card h1 {
                 font-size: 1.4rem;
             }
         }
@@ -265,68 +149,7 @@
         </div>
     </div>
     
-    <script>
-    // 主题切换功能
-    function initTheme() {
-        const themeToggle = document.getElementById('themeToggle');
-        const currentTheme = localStorage.getItem('theme') || 'light';
-        
-        document.documentElement.setAttribute('data-theme', currentTheme);
-        themeToggle.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
-        
-        themeToggle.addEventListener('click', function() {
-            const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
-        });
-    }
-    initTheme();
-
-    // 重载媒体库
-    function reloadLibrary() {
-        if (confirm('确定要重载媒体库吗？这将刷新所有媒体文件和缩略图缓存。')) {
-            fetch('/reload_library', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            }).then(response => {
-                if (response.ok) {
-                    alert('媒体库重载成功！');
-                    location.reload();
-                } else {
-                    alert('重载失败，请检查控制台错误信息。');
-                }
-            }).catch(error => {
-                alert('重载失败：' + error.message);
-            });
-        }
-    }
-
-    // 重启服务器
-    function restartServer() {
-        if (confirm('确定要重启服务器吗？页面将自动刷新。')) {
-            fetch('/restart_server', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            }).then(response => {
-                alert('服务器正在重启...');
-                // 等待几秒后刷新页面
-                setTimeout(() => {
-                    location.reload();
-                }, 3000);
-            }).catch(error => {
-                // 重启时连接会断开，这是正常的
-                alert('服务器正在重启...');
-                setTimeout(() => {
-                    location.reload();
-                }, 3000);
-            });
-        }
-    }
-    </script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/config.js') }}"></script>
 </body>
 </html>
