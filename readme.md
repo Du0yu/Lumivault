@@ -55,6 +55,29 @@ pip install flask opencv-python pillow
    - 点击"配置设置"
    - 输入你的媒体文件根目录路径
 
+### 🐳 使用 Docker 部署
+
+1. **构建镜像**
+   ```bash
+   docker build -t lumivault .
+   ```
+
+2. **运行容器**
+   ```bash
+   docker run -d \
+     -p 5000:5000 \
+     -v /你的媒体目录:/app/media \
+     -v $(pwd)/config.json:/app/config.json \
+     --name lumivault \
+     lumivault
+   ```
+
+   - `/你的媒体目录` 替换为你本地的媒体文件夹路径
+   - `config.json` 可选挂载，首次运行后会自动生成
+
+3. **访问应用**
+   - 打开浏览器访问 [http://localhost:5000](http://localhost:5000)
+
 ## 目录结构
 
 ```
@@ -87,93 +110,4 @@ bighouse/
 ├── 分类1/
 │   ├── 图片1.jpg
 │   ├── 图片2.png
-│   └── 视频1.mp4
-├── 分类2/
-│   ├── 图片3.jpg
-│   └── 视频2.mp4
-└── ...
-```
-
-### 支持的文件格式
-- **图片**：JPG, JPEG, PNG, GIF, BMP
-- **视频**：MP4, AVI, MOV, MKV, WebM
-
-### 快捷键
-- **图片查看器**：
-  - `←/→` 或 `A/D`：上一张/下一张
-  - `Esc`：关闭查看器
-  - 移动端支持左右滑动切换
-
-## 技术栈
-
-- **后端**：Flask (Python)
-- **前端**：原生 HTML/CSS/JavaScript
-- **图像处理**：OpenCV, Pillow
-- **特性**：响应式设计、主题切换
-
-## 配置选项
-
-### 环境变量
-- `FLASK_ENV`：设置为 `development` 开启调试模式
-- `FLASK_PORT`：自定义端口（默认 5000）
-
-### 配置文件 (config.json)
-```json
-{
-  "base": "/path/to/your/media/folder"
-}
-```
-
-## 开发说明
-
-### 添加新功能
-1. 后端路由添加到 `app.py`
-2. 前端模板放在 `templates/` 目录
-3. 样式添加到 `static/css/style.css`
-4. JavaScript 功能添加到 `static/js/` 对应文件
-
-### 自定义主题
-修改 `static/css/style.css` 中的 CSS 变量：
-
-```css
-:root {
-  --bg-primary: #f8fafc;
-  --accent-color: #8b9dc3;
-  /* 更多变量... */
-}
-```
-
-## 故障排除
-
-### 常见问题
-
-1. **视频缩略图不显示**
-   - 确保安装了 OpenCV：`pip install opencv-python`
-   - 检查视频文件格式是否受支持
-
-2. **图片不显示**
-   - 检查媒体根目录路径是否正确
-   - 确保图片文件格式受支持
-   - 检查文件权限
-
-3. **移动端显示异常**
-   - 清除浏览器缓存
-   - 检查网络连接
-
-### 性能优化建议
-
-- 定期清理视频缩略图缓存
-- 使用 SSD 存储媒体文件以提升加载速度
-- 合理组织文件夹结构，避免单个文件夹文件过多
-
-## 许可证
-
-MIT License
-
-## 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
----
-
-**享受你的个人媒体图书馆！** 📚✨
+│   └
