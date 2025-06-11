@@ -75,7 +75,7 @@ bighouse/
 │   ├── config.html       # 配置页面
 │   └── video_player.html # 视频播放器
 ```
-```
+
 
 ## 使用说明
 
