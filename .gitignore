@@ -1,2 +1,11 @@
 media/
 video_thumbs/
+config.json
+.idea/.gitignore
+.idea/bighouse.iml
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
+.idea/inspectionProfiles/profiles_settings.xml
+.idea/inspectionProfiles/Project_Default.xml
+config.json
