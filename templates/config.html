@@ -116,6 +116,55 @@
                 font-size: 1.4rem;
             }
         }
+        
+        /* 药丸开关样式 */
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .toggle-switch input[type="checkbox"] {
+            display: none;
+        }
+        
+        .toggle-slider {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: #ccc;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .toggle-slider:before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+        
+        .toggle-switch input[type="checkbox"]:checked + .toggle-slider {
+            background: var(--accent-color);
+        }
+        
+        .toggle-switch input[type="checkbox"]:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        
+        .toggle-label {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -157,6 +206,19 @@
                     <button type="button" onclick="restartServer()" style="background: linear-gradient(90deg, #e17055 0%, #e88467 100%);">重启服务器</button>
                 </div>
             </form>
+            
+            <!-- 隐藏空文件夹选项 -->
+            <div style="margin-top: 30px; padding-top: 24px; border-top: 1px solid var(--border-color);">
+                <div class="toggle-switch">
+                    <input type="checkbox" name="hide_empty_folders" id="hide_empty_folders" {% if hide_empty_folders %}checked{% endif %} onchange="toggleHideEmptyFolders(this)">
+                    <label for="hide_empty_folders" class="toggle-slider"></label>
+                    <label for="hide_empty_folders" class="toggle-label">隐藏空文件夹</label>
+                </div>
+                <small style="display: block; margin-top: -15px; margin-bottom: 20px; color: var(--text-secondary); font-size: 0.85rem; margin-left: 62px;">
+                    启用后将不显示没有图片或视频文件的文件夹
+                </small>
+            </div>
+            
             <div class="example">
                 <p><strong>路径示例：</strong><br>
                     Windows: <code>C:\Users\你的用户名\Pictures</code><br>

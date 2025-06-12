@@ -78,6 +78,32 @@ function restartServer() {
     }
 }
 
+// 切换隐藏空文件夹设置
+function toggleHideEmptyFolders(checkbox) {
+    const formData = new FormData();
+    formData.append('base_path', document.getElementById('base_path').value);
+    formData.append('hide_empty_folders', checkbox.checked ? 'on' : '');
+    
+    fetch('/config', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            showMessage(checkbox.checked ? '已启用隐藏空文件夹' : '已禁用隐藏空文件夹', 'success');
+        } else {
+            showMessage('设置保存失败', 'error');
+            // 如果失败，恢复开关状态
+            checkbox.checked = !checkbox.checked;
+        }
+    })
+    .catch(error => {
+        showMessage('设置保存失败: ' + error.message, 'error');
+        // 如果失败，恢复开关状态
+        checkbox.checked = !checkbox.checked;
+    });
+}
+
 // 显示消息提示
 function showMessage(message, type = 'info') {
     // 移除已存在的消息

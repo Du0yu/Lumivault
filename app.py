@@ -119,6 +119,7 @@ def get_media_files(base_path, current_path=""):
     """
     categories = {}
     full_path = os.path.join(base_path, current_path) if current_path else base_path
+    hide_empty = get_hide_empty_folders_setting()
     
     if not os.path.exists(full_path):
         return categories
@@ -151,6 +152,10 @@ def get_media_files(base_path, current_path=""):
                         videos.append(file)
                 elif os.path.isdir(file_path):
                     subdirs.append(file)
+            
+            # 如果启用隐藏空文件夹且该文件夹为空，则跳过
+            if hide_empty and not images and not videos:
+                continue
             
             # 按比例分组排序图片
             images.sort(key=lambda x: x['ratio'])
@@ -195,6 +200,15 @@ def get_video_thumb(base_path, category, video_filename):
 
 @app.route('/')
 def index():
+    # 检查是否已配置，如果配置了直接跳转到nav
+    base_path = get_base_path()
+    if base_path and os.path.exists(base_path):
+        return redirect(url_for('nav'))
+    else:
+        return redirect(url_for('home'))
+    
+@app.route('/home')
+def home():
     return render_template('home.html')
 
 @app.route('/vault')
@@ -262,27 +276,6 @@ def media(category, filename):
     
     return send_from_directory(dir_path, filename)
 
-@app.route('/config', methods=['GET', 'POST'])
-def config():
-    if request.method == 'POST':
-        base_path = request.form.get('base_path', '').strip()
-        if not base_path or not os.path.exists(base_path):
-            flash('路径无效，请重新输入')
-            return render_template('config.html', base_path=base_path)
-        # 适配不同OS，保存绝对路径
-        base_path = os.path.abspath(base_path)
-        with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
-            json.dump({'base': base_path}, f, ensure_ascii=False, indent=2)
-        flash('配置已保存')
-        return redirect(url_for('index'))
-    
-    # 获取当前配置的路径
-    current_base_path = get_base_path()
-    # 如果没有配置，使用默认路径
-    default_path = current_base_path or os.path.abspath(os.path.expanduser('~'))
-    
-    return render_template('config.html', base_path=default_path, current_base_path=current_base_path)
-
 @app.route('/nav')
 def nav():
     base_path = get_base_path()
@@ -306,12 +299,61 @@ def nav():
     
     return render_template('nav.html', covers=covers, has_root_media=has_root_media)
 
+@app.route('/config', methods=['GET', 'POST'])
+def config():
+    if request.method == 'POST':
+        base_path = request.form.get('base_path', '').strip()
+        hide_empty_folders = request.form.get('hide_empty_folders') == 'on'
+        
+        if not base_path or not os.path.exists(base_path):
+            flash('路径无效，请重新输入')
+            return render_template('config.html', base_path=base_path, hide_empty_folders=hide_empty_folders)
+        
+        # 适配不同OS，保存绝对路径
+        base_path = os.path.abspath(base_path)
+        config_data = {
+            'base': base_path,
+            'hide_empty_folders': hide_empty_folders
+        }
+        
+        with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
+            json.dump(config_data, f, ensure_ascii=False, indent=2)
+        flash('配置已保存')
+        return redirect(url_for('nav'))  # 改为重定向到nav而不是index
+    
+    # 获取当前配置
+    config_data = {}
+    if os.path.exists(CONFIG_PATH):
+        with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
+            config_data = json.load(f)
+    
+    current_base_path = config_data.get('base', '')
+    hide_empty_folders = config_data.get('hide_empty_folders', False)
+    default_path = current_base_path or os.path.abspath(os.path.expanduser('~'))
+    
+    return render_template('config.html', 
+                         base_path=default_path, 
+                         current_base_path=current_base_path,
+                         hide_empty_folders=hide_empty_folders)
+
+def get_hide_empty_folders_setting():
+    """获取隐藏空文件夹设置"""
+    if not os.path.exists(CONFIG_PATH):
+        return False
+    try:
+        with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+        return config.get('hide_empty_folders', False)
+    except:
+        return False
+
 def get_media_files_single_level(base_path, current_path=""):
     """
     获取单层目录的媒体文件和子目录
     current_path: 当前相对于base_path的路径
     """
     full_path = os.path.join(base_path, current_path) if current_path else base_path
+    hide_empty = get_hide_empty_folders_setting()
     
     if not os.path.exists(full_path):
         return {'images': [], 'videos': [], 'subdirs': []}
@@ -338,7 +380,24 @@ def get_media_files_single_level(base_path, current_path=""):
             elif ext in ['.mp4', '.avi', '.mov', '.mkv', '.webm']:
                 videos.append(item)
         elif os.path.isdir(item_path):
-            subdirs.append(item)
+            # 检查子目录是否为空（如果启用了隐藏空文件夹）
+            if hide_empty:
+                subdir_has_media = False
+                try:
+                    for subitem in os.listdir(item_path):
+                        subitem_path = os.path.join(item_path, subitem)
+                        if os.path.isfile(subitem_path):
+                            ext = os.path.splitext(subitem)[1].lower()
+                            if ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.mp4', '.avi', '.mov', '.mkv', '.webm']:
+                                subdir_has_media = True
+                                break
+                    if subdir_has_media:
+                        subdirs.append(item)
+                except:
+                    # 如果无法读取子目录，仍然显示它
+                    subdirs.append(item)
+            else:
+                subdirs.append(item)
     
     # 按比例分组排序图片
     ratio_groups = {}
