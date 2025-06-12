@@ -253,9 +253,37 @@
             width: 100%;
             height: 0;
             padding-bottom: 75%;
-            background: var(--bg-accent);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             position: relative;
         }
+        
+        .cat-cover.no-image {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .cat-cover.no-image::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            backdrop-filter: blur(10px);
+        }
+        
+        .cat-cover.no-image::after {
+            content: '📁';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            opacity: 0.8;
+        }
+        
         .cat-cover img {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -280,26 +308,34 @@
             text-shadow: 0 2px 8px rgba(0,0,0,0.25);
             width: 100%;
             text-align: center;
-            padding: 0 8px;
+            padding: 0 24px;
             z-index: 2;
+            max-width: 180px;
+            margin: 0 auto;
+            word-break: break-word;
+            line-height: 1.3;
         }
         .cat-card .cat-name {
             /* 兼容无封面时的样式 */
             color: #4f8cff;
             background: none;
             text-shadow: none;
-            margin: 12px 0 0 0;
+            margin: 12px auto 0 auto;
             position: static;
+            padding: 0 24px;
+            max-width: 180px;
         }
         .cat-card .cat-cover .cat-name {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            margin: 0;
+            margin: 0 auto;
             color: #fff;
             background: none;
             text-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            padding: 0 24px;
+            max-width: 180px;
         }
         .cat-card .cat-cover .cat-name.no-cover {
             color: #bbb;
@@ -342,18 +378,18 @@
     </div>
     <div class="nav-container">
         {% for cat, cover in covers.items() %}
-        <a class="cat-card" href="{{ url_for('album', cat=cat) }}">
-            <div class="cat-cover">
+        <a class="cat-card" href="{% if cat == '__root__' %}{{ url_for('album', cat='__root__') }}{% else %}{{ url_for('album', cat=cat|urlencode) }}{% endif %}">
+            <div class="cat-cover {% if not cover %}no-image{% endif %}">
                 {% if cover %}
-                <img src="{{ url_for('media', category=cat, filename=cover) }}" alt="{{ cat }}">
-                <div class="cat-overlay">
-                    <span class="cat-name">{{ cat }}</span>
-                </div>
+                {% if cat == '__root__' %}
+                <img src="{{ url_for('media_root', filename=cover) }}" alt="根目录">
                 {% else %}
-                <div class="cat-overlay">
-                    <span class="cat-name no-cover">{{ cat }}</span>
-                </div>
+                <img src="{{ url_for('media', category=cat, filename=cover) }}" alt="{{ cat }}">
                 {% endif %}
+                {% endif %}
+                <div class="cat-overlay">
+                    <span class="cat-name">{% if cat == '__root__' %}根目录{% else %}{{ cat }}{% endif %}</span>
+                </div>
             </div>
         </a>
         {% endfor %}

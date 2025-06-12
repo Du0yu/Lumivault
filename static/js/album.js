@@ -234,7 +234,52 @@ function setupImageZoom() {
 
 // 页面加载完成后执行
 document.addEventListener('DOMContentLoaded', function() {
-    groupImagesByRatio();
+    // Group media items by aspect ratio
+    function groupMediaByRatio() {
+        const mediaLists = document.querySelectorAll('.media-list');
+        
+        mediaLists.forEach(function(mediaList) {
+            const mediaItems = Array.from(mediaList.children);
+            const ratioGroups = {};
+            
+            // Group items by ratio class
+            mediaItems.forEach(function(item) {
+                const ratioClass = Array.from(item.classList).find(cls => cls.startsWith('ratio-'));
+                if (ratioClass) {
+                    if (!ratioGroups[ratioClass]) {
+                        ratioGroups[ratioClass] = [];
+                    }
+                    ratioGroups[ratioClass].push(item);
+                }
+            });
+            
+            // Clear the original list
+            mediaList.innerHTML = '';
+            
+            // Create ratio groups
+            Object.keys(ratioGroups).forEach(function(ratioClass, index) {
+                const group = document.createElement('div');
+                group.className = 'ratio-group';
+                
+                ratioGroups[ratioClass].forEach(function(item) {
+                    group.appendChild(item);
+                });
+                
+                mediaList.appendChild(group);
+                
+                // Add separator between groups (except for the last one)
+                if (index < Object.keys(ratioGroups).length - 1) {
+                    const separator = document.createElement('div');
+                    separator.className = 'ratio-separator';
+                    mediaList.appendChild(separator);
+                }
+            });
+        });
+    }
+    
+    // Initialize grouping
+    groupMediaByRatio();
+
     createZoomNavBtns();
     setupImageZoom();
 });
