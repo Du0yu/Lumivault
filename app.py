@@ -8,11 +8,14 @@ from PIL import Image
 import threading
 import time
 from urllib.parse import quote
+import pickle
+from pathlib import Path
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # 用于flash消息
 
 CONFIG_PATH = 'config.json'
+CACHE_PATH = 'image_ratio_cache.pkl'
 
 def get_base_path():
     if not os.path.exists(CONFIG_PATH):
@@ -27,11 +30,47 @@ def get_thumb_dir():
         return os.path.abspath('video_thumbs')
     return os.path.join(base_path, 'video_thumbs')
 
+def load_ratio_cache():
+    """加载图片比例缓存"""
+    try:
+        if os.path.exists(CACHE_PATH):
+            with open(CACHE_PATH, 'rb') as f:
+                return pickle.load(f)
+    except Exception as e:
+        print(f"加载缓存失败: {e}")
+    return {}
+
+def save_ratio_cache(cache):
+    """保存图片比例缓存"""
+    try:
+        with open(CACHE_PATH, 'wb') as f:
+            pickle.dump(cache, f)
+    except Exception as e:
+        print(f"保存缓存失败: {e}")
+
+# 全局缓存变量
+ratio_cache = load_ratio_cache()
+
 def get_image_ratio(image_path):
     """
     获取图片的长宽比，返回最接近的比例类型
     """
+    global ratio_cache
+    
     try:
+        # 获取文件的修改时间作为缓存键的一部分
+        file_stat = os.stat(image_path)
+        file_mtime = file_stat.st_mtime
+        file_size = file_stat.st_size
+        
+        # 创建缓存键：路径 + 修改时间 + 文件大小
+        cache_key = f"{image_path}_{file_mtime}_{file_size}"
+        
+        # 先检查缓存
+        if cache_key in ratio_cache:
+            return ratio_cache[cache_key]
+        
+        # 缓存未命中，重新计算
         with Image.open(image_path) as img:
             # 使用 PIL 的内置方法处理 EXIF 旋转
             from PIL import ImageOps
@@ -53,11 +92,22 @@ def get_image_ratio(image_path):
             
             # 找到最接近的比例
             closest_ratio = min(ratios.items(), key=lambda x: abs(x[1] - ratio))
+            result = closest_ratio[0]
+            
+            # 保存到缓存
+            ratio_cache[cache_key] = result
+            
+            # 清理旧的缓存条目（相同路径但不同时间戳的）
+            keys_to_remove = [key for key in ratio_cache.keys() 
+                            if key.startswith(image_path + '_') and key != cache_key]
+            for old_key in keys_to_remove:
+                del ratio_cache[old_key]
             
             # 调试信息
-            print(f"图片 {image_path}: {width}x{height}, 比例: {ratio:.3f}, 分类为: {closest_ratio[0]}")
+            print(f"图片 {image_path}: {width}x{height}, 比例: {ratio:.3f}, 分类为: {result} (缓存已更新)")
             
-            return closest_ratio[0]
+            return result
+            
     except Exception as e:
         print(f"无法读取图片尺寸: {image_path} {e}")
         return '4-3'  # 默认返回4:3
@@ -400,6 +450,7 @@ def video_thumb(thumb_name):
 @app.route('/reload_library', methods=['POST'])
 def reload_library():
     """重载媒体库，清除缓存"""
+    global ratio_cache
     try:
         # 清除视频缩略图缓存
         thumb_dir = get_thumb_dir()
@@ -408,6 +459,11 @@ def reload_library():
                 file_path = os.path.join(thumb_dir, file)
                 if os.path.isfile(file_path):
                     os.remove(file_path)
+        
+        # 清除图片比例缓存
+        ratio_cache.clear()
+        if os.path.exists(CACHE_PATH):
+            os.remove(CACHE_PATH)
         
         # 重新扫描媒体文件
         base_path = get_base_path()
@@ -440,4 +496,8 @@ def restart_server():
         return {'status': 'error', 'message': str(e)}, 500
 
 if __name__ == '__main__':
+    # 程序退出时保存缓存
+    import atexit
+    atexit.register(lambda: save_ratio_cache(ratio_cache))
+    
     app.run(debug=True, host='0.0.0.0')
