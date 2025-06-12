@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 from PIL import Image
 import threading
 import time
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 import pickle
 from pathlib import Path
 
@@ -229,19 +229,31 @@ def media(category, filename):
     # 构建安全的文件路径 - 支持多层路径
     safe_filename = secure_filename(filename)
     
-    # 处理多层分类路径
+    # URL解码分类路径
+    category = unquote(category)
+    
+    # 处理多层分类路径 - 不要对路径部分使用 secure_filename，因为它会改变空格等字符
     category_parts = category.split('/')
-    safe_category_parts = [secure_filename(part) for part in category_parts]
-    safe_category_path = os.path.join(*safe_category_parts) if safe_category_parts else ''
+    # 只检查路径是否安全，不修改路径
+    for part in category_parts:
+        if '..' in part or part.startswith('/') or part.startswith('\\'):
+            return "Access denied", 403
+    
+    safe_category_path = os.path.join(*category_parts) if category_parts else ''
     
     file_path = os.path.join(base_path, safe_category_path, safe_filename)
     
     # 确保请求的文件在 base_path 内，防止路径遍历攻击
-    if not file_path.startswith(base_path):
+    if not os.path.abspath(file_path).startswith(os.path.abspath(base_path)):
         return "Access denied", 403
     
     # 检查文件是否存在
     if not os.path.exists(file_path):
+        # 调试信息
+        print(f"文件不存在: {file_path}")
+        print(f"原始category: {category}")
+        print(f"safe_category_path: {safe_category_path}")
+        print(f"文件名: {safe_filename}")
         return "File not found", 404
     
     # 获取目录和文件名
@@ -263,9 +275,13 @@ def config():
             json.dump({'base': base_path}, f, ensure_ascii=False, indent=2)
         flash('配置已保存')
         return redirect(url_for('index'))
-    # 默认值尝试读取当前目录
-    default_path = os.path.abspath(os.path.expanduser('~'))
-    return render_template('config.html', base_path=default_path)
+    
+    # 获取当前配置的路径
+    current_base_path = get_base_path()
+    # 如果没有配置，使用默认路径
+    default_path = current_base_path or os.path.abspath(os.path.expanduser('~'))
+    
+    return render_template('config.html', base_path=default_path, current_base_path=current_base_path)
 
 @app.route('/nav')
 def nav():
@@ -356,6 +372,10 @@ def album(category_path=None):
     # 获取请求的分类路径
     cat = request.args.get('cat') or category_path
     
+    # URL解码分类路径
+    if cat:
+        cat = unquote(cat)
+    
     # 特殊处理根目录
     if cat == '__root__':
         cat = ""
@@ -374,7 +394,8 @@ def album(category_path=None):
                 'images': current_files['images'],
                 'videos': current_files['videos'],
                 'subdirs': current_files['subdirs'],
-                'display_name': display_name
+                'display_name': display_name,
+                'images_by_ratio': current_files.get('images_by_ratio', {})
             }
         }
     else:
@@ -388,7 +409,8 @@ def album(category_path=None):
                     'images': subdir_files['images'],
                     'videos': subdir_files['videos'],
                     'subdirs': subdir_files['subdirs'],
-                    'display_name': subdir
+                    'display_name': subdir,
+                    'images_by_ratio': subdir_files.get('images_by_ratio', {})
                 }
         else:
             # 没有子目录，直接显示根目录内容
@@ -397,7 +419,8 @@ def album(category_path=None):
                     'images': current_files['images'],
                     'videos': current_files['videos'],
                     'subdirs': current_files['subdirs'],
-                    'display_name': "根目录"
+                    'display_name': "根目录",
+                    'images_by_ratio': current_files.get('images_by_ratio', {})
                 }
             }
     
