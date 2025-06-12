@@ -47,7 +47,7 @@
         
         <!-- 面包屑导航 -->
         <div class="breadcrumb-container">
-            <a href="{{ url_for('nav') }}" class="breadcrumb-item">首页</a>
+            <a href="{{ url_for('nav') }}" class="breadcrumb-item">/</a>
             {% for breadcrumb in breadcrumbs %}
             <span class="breadcrumb-separator">›</span>
             {% if loop.last %}

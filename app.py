@@ -283,11 +283,8 @@ def nav():
         flash('请先配置媒体根目录路径')
         return redirect(url_for('config'))
     
-    all_categories = get_media_files(base_path)
-    # 获取每个类别的封面图（第一张图片，没有则None）
+    # 只获取第一层目录，不递归扫描所有子目录
     covers = {}
-    for cat, files in all_categories.items():
-        covers[cat] = files['images'][0]['filename'] if files['images'] else None
     
     # 检查根目录是否有媒体文件
     root_files = get_media_files_single_level(base_path, "")
@@ -296,6 +293,20 @@ def nav():
     # 如果根目录有媒体文件，添加根目录卡片
     if has_root_media:
         covers['__root__'] = root_files['images'][0]['filename'] if root_files['images'] else None
+    
+    # 只扫描第一层子目录
+    if os.path.exists(base_path):
+        for item in os.listdir(base_path):
+            if item == 'video_thumbs':
+                continue
+            item_path = os.path.join(base_path, item)
+            if os.path.isdir(item_path):
+                # 获取该子目录的文件信息
+                subdir_files = get_media_files_single_level(base_path, item)
+                # 如果该子目录有媒体文件（图片或视频），则添加到covers
+                if subdir_files['images'] or subdir_files['videos'] or subdir_files['subdirs']:
+                    # 优先使用图片作为封面，如果没有图片则为None
+                    covers[item] = subdir_files['images'][0]['filename'] if subdir_files['images'] else None
     
     return render_template('nav.html', covers=covers, has_root_media=has_root_media)
 
@@ -525,6 +536,11 @@ def video_player(category, filename):
 
 @app.route('/video_thumb/<thumb_name>')
 def video_thumb(thumb_name):
+    # 添加日志过滤，忽略GET请求的日志输出
+    import logging
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
+    
     # 直接返回封面图片
     thumb_dir = get_thumb_dir()
     return send_from_directory(thumb_dir, thumb_name)
@@ -582,4 +598,15 @@ if __name__ == '__main__':
     import atexit
     atexit.register(lambda: save_ratio_cache(ratio_cache))
     
-    app.run(debug=True, host='0.0.0.0')
+    # 减少不必要的日志输出
+    import logging
+    from werkzeug.serving import WSGIRequestHandler
+    
+    class QuietHandler(WSGIRequestHandler):
+        def log_request(self, code='-', size='-'):
+            # 忽略video_thumb请求的日志
+            if '/video_thumb/' in self.path:
+                return
+            super().log_request(code, size)
+    
+    app.run(debug=True, host='0.0.0.0', request_handler=QuietHandler)
