@@ -239,6 +239,12 @@ h2 {
     font-size: 1.25rem;
     color: var(--text-primary);
     letter-spacing: 1px;
+    text-align: center;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 40px;
+    padding-right: 40px;
 }
 
 /* 标签页样式 */
@@ -702,6 +708,12 @@ h2 {
 .subdirs-container h3 {
     margin-bottom: 15px;
     color: var(--text-color);
+    text-align: center;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 32px;
+    padding-right: 32px;
 }
 
 .subdirs-grid {
@@ -716,27 +728,46 @@ h2 {
     flex-direction: column;
     align-items: center;
     padding: 20px;
-    background: var(--bg-accent);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 12px;
     text-decoration: none;
-    color: var(--text-color);
+    color: white;
     transition: all 0.2s ease;
-    border: 1px solid var(--border-color);
+    border: 1px solid rgba(255,255,255,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.subdir-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.1);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.subdir-card:hover::before {
+    opacity: 1;
 }
 
 .subdir-card:hover {
-    background: var(--border-color);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
 }
 
 .subdir-icon {
     font-size: 32px;
     margin-bottom: 10px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
 }
 
 .subdir-name {
     font-weight: 500;
     text-align: center;
     word-break: break-word;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
