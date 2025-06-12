@@ -26,9 +26,37 @@
         <a href="{{ url_for('config') }}">设置</a>
     </div>
     <div class="container">
+    {% if subdirs %}
+    <!-- 子目录导航卡片 -->
+    <div class="subdirs-container">
+        <h3>子目录</h3>
+        <div class="subdirs-grid">
+            {% for subdir in subdirs %}
+            <a href="{{ url_for('album', category_path=(current_path + '/' + subdir) if current_path else subdir) }}" class="subdir-card">
+                <div class="subdir-icon">📁</div>
+                <div class="subdir-name">{{ subdir }}</div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
     {% for category, files in categories.items() %}
     <div class="category">
-        <h2>{{ category }}</h2>
+        <h2>{{ files.display_name }}</h2>
+        
+        <!-- 面包屑导航 -->
+        <div class="breadcrumb-container">
+            <a href="{{ url_for('nav') }}" class="breadcrumb-item">首页</a>
+            {% for breadcrumb in breadcrumbs %}
+            <span class="breadcrumb-separator">›</span>
+            {% if loop.last %}
+            <span class="breadcrumb-item current">{{ breadcrumb.name }}</span>
+            {% else %}
+            <a href="{{ url_for('album', category_path=breadcrumb.path) }}" class="breadcrumb-item">{{ breadcrumb.name }}</a>
+            {% endif %}
+            {% endfor %}
+        </div>
         
         <!-- 标签页导航 -->
         <div class="tab-container">
@@ -44,17 +72,56 @@
         {% if files.images %}
         <div class="tab-content active" id="images-{{ loop.index }}">
             <div class="media-list" id="mediaList-img-{{ loop.index }}">
-                {% for image in files.images %}
-                {% set ratio_class = "ratio-" + image.ratio %}
-                <div class="media-item {{ ratio_class }}" data-category="{{ category }}" data-index="{{ loop.index0 }}">
-                    <a href="{{ url_for('media', category=category, filename=image.filename) }}" target="_blank" class="image-link">
-                        <div class="img-wrapper">
-                            <img src="{{ url_for('media', category=category, filename=image.filename) }}" alt="" class="zoomable-image"
-                                 data-category="{{ category }}" data-index="{{ loop.index0 }}">
+                {% if files.images_by_ratio %}
+                    {% for ratio, images in files.images_by_ratio.items() %}
+                        {% if not loop.first %}
+                        <div class="ratio-separator"></div>
+                        {% endif %}
+                        <div class="ratio-group">
+                            {% for image in images %}
+                            {% set ratio_class = "ratio-" + image.ratio %}
+                            <div class="media-item {{ ratio_class }}" data-category="{{ category }}" data-index="{{ loop.index0 }}">
+                                {% if category == '__root__' %}
+                                <a href="{{ url_for('media_root', filename=image.filename) }}" target="_blank" class="image-link">
+                                    <div class="img-wrapper">
+                                        <img src="{{ url_for('media_root', filename=image.filename) }}" alt="" class="zoomable-image"
+                                             data-category="" data-index="{{ loop.index0 }}">
+                                    </div>
+                                </a>
+                                {% else %}
+                                <a href="{{ url_for('media', category=category, filename=image.filename) }}" target="_blank" class="image-link">
+                                    <div class="img-wrapper">
+                                        <img src="{{ url_for('media', category=category, filename=image.filename) }}" alt="" class="zoomable-image"
+                                             data-category="{{ category }}" data-index="{{ loop.index0 }}">
+                                    </div>
+                                </a>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
                         </div>
-                    </a>
-                </div>
-                {% endfor %}
+                    {% endfor %}
+                {% else %}
+                    {% for image in files.images %}
+                    {% set ratio_class = "ratio-" + image.ratio %}
+                    <div class="media-item {{ ratio_class }}" data-category="{{ category }}" data-index="{{ loop.index0 }}">
+                        {% if category == '__root__' %}
+                        <a href="{{ url_for('media_root', filename=image.filename) }}" target="_blank" class="image-link">
+                            <div class="img-wrapper">
+                                <img src="{{ url_for('media_root', filename=image.filename) }}" alt="" class="zoomable-image"
+                                     data-category="" data-index="{{ loop.index0 }}">
+                            </div>
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('media', category=category, filename=image.filename) }}" target="_blank" class="image-link">
+                            <div class="img-wrapper">
+                                <img src="{{ url_for('media', category=category, filename=image.filename) }}" alt="" class="zoomable-image"
+                                     data-category="{{ category }}" data-index="{{ loop.index0 }}">
+                            </div>
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% endif %}
             </div>
         </div>
         {% endif %}
@@ -65,7 +132,11 @@
             <div class="media-list" id="mediaList-video-{{ loop.index }}">
                 {% for video in files.videos %}
                 <div class="media-item ratio-16-9" data-category="{{ category }}" data-index="{{ loop.index0 }}">
+                    {% if category == '__root__' %}
+                    <a href="{{ url_for('video_player', category='', filename=video) }}" style="text-decoration:none;width:100%;height:100%;">
+                    {% else %}
                     <a href="{{ url_for('video_player', category=category, filename=video) }}" style="text-decoration:none;width:100%;height:100%;">
+                    {% endif %}
                         <div class="img-wrapper">
                             <div class="video-cover">
                                 {# 优先用自动生成的封面 #}

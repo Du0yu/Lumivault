@@ -342,16 +342,20 @@
     </div>
     <div class="nav-container">
         {% for cat, cover in covers.items() %}
-        <a class="cat-card" href="{{ url_for('album', cat=cat) }}">
+        <a class="cat-card" href="{% if cat == '__root__' %}{{ url_for('album', cat='__root__') }}{% else %}{{ url_for('album', cat=cat) }}{% endif %}">
             <div class="cat-cover">
                 {% if cover %}
+                {% if cat == '__root__' %}
+                <img src="{{ url_for('media', category='', filename=cover) }}" alt="根目录">
+                {% else %}
                 <img src="{{ url_for('media', category=cat, filename=cover) }}" alt="{{ cat }}">
+                {% endif %}
                 <div class="cat-overlay">
-                    <span class="cat-name">{{ cat }}</span>
+                    <span class="cat-name">{% if cat == '__root__' %}根目录{% else %}{{ cat }}{% endif %}</span>
                 </div>
                 {% else %}
                 <div class="cat-overlay">
-                    <span class="cat-name no-cover">{{ cat }}</span>
+                    <span class="cat-name no-cover">{% if cat == '__root__' %}根目录{% else %}{{ cat }}{% endif %}</span>
                 </div>
                 {% endif %}
             </div>
